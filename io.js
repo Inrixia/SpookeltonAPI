@@ -28,6 +28,12 @@ io.on('connection', function (socket) {
     })
   });
 
+  socket.on('get_rollback_files', function(data){
+    serv.get_rollback_files(data.playerArray, data.serverDir).then(playerArray => {
+      socket.emit('return_get_rollback_files', playerArray)
+    })
+  })
+
   socket.on('game_add', function(appid){
     getData(appid, function(data) {
       db.get().collection('giveaway_games').insert([data], function (err, result) { // Insert the data as a new document into the games collection
@@ -38,6 +44,13 @@ io.on('connection', function (socket) {
       })
     })
   })
+
+  socket.on('rollback_files', function (data) {
+    serv.rollbackFiles(data.zip, data.server, data.files).then(response => {
+      socket.emit('return_rollback_files', response)
+    })
+  });
+
 });
 
 function getData (id, done) {

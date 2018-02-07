@@ -33,6 +33,7 @@
     "request": "^2.83.0",
     "socket.io": "^2.0.4",
     "stream-json": "^0.5.2",
-    "string-search": "^1.2.0"
+    "string-search": "^1.2.0",
+    "unzip2": "^0.2.5"
   }
 }

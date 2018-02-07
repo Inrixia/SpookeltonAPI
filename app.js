@@ -53,12 +53,12 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 function checkAuth(rank, req, res, next) {
-  console.log();
   if (req.isAuthenticated()) return next();
   res.redirect('/login');
 }
 
 function checkAdminAuth(req, res, next) {
+  req.session.returnTo = req.path;
   if (req.isAuthenticated() && req.user.id) {
     serv.getDiscordUserRoles(req.user.id).then(roles => {
       if(roles.some(function(role){
@@ -74,7 +74,7 @@ function checkAdminAuth(req, res, next) {
 app.get('/login', passport.authenticate('discord', { scope: scopes }), function(req, res) {});
 app.get('/callback',
     passport.authenticate('discord', { failureRedirect: '/login' }), function(req, res) {
-      res.redirect('/giveaway')
+      res.redirect(req.session.returnTo || '/giveaway');
       serv.getDiscordUserRoles(req.user.id).then(roles => {
         where.is(req.ip, function(err, result){
           data = {

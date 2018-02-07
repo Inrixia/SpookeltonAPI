@@ -11,33 +11,56 @@ const StreamArray = require('./node_modules/stream-json/utils/StreamObject');
 const stream = StreamArray.make();
 const stringSearcher = require('string-search');
 const moment = require('moment');
-const AdmZip = require('adm-zip')
+const AdmZip = require('adm-zip');
+const unzip = require('unzip2');
 const Discord = require("discord.js");
 const client = new Discord.Client();
-
-// Begin Rollback Functions
-// type = region or playerdata
-// data = {region_coordinates, uuid, username, archive_dir}
-// zip = path to zip containing backup
-module.exports.rollback = function rollback(type, data, zip) {
-  return new Promise(function(resolve, reject){
-    var fzip = new AdmZip(zip);
-    if (type == 'region') {
-      resolve()
-    } else if(type == 'playerdata') {
-      serv.getUUID(data.username, serv.cleanUUID(data.uuid)).then(dat => {
-        resolve({id: dat.uuid, username: dat.username})
-        fzip.extractEntryTo('Cookies\\playerdata\\'+dat.uuid+'.dat', /*target path*/"T:/", /*maintainEntryPath*/false, /*overwrite*/true);
-      })
-    }
-  })
-}
 
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
 });
-
 client.login('***REMOVED***');
+
+// Begin Rollback Functions
+
+// rollbackFiles -> Moves a array of files from a zip to a folder.
+module.exports.rollbackFiles = function rollbackFiles(zip, folder, files) {
+  return new Promise(function(resolve, reject){
+    try {
+      if (fs.existsSync(zip) == false) {
+        resolve({state: 'Archive zip does not exist!', zip: zip})
+      } else {
+        var fzip = new AdmZip(zip);
+        async.map(files, function(file, done) {
+          var file = file.replace(/\//g, '\\')
+          if (fzip.getEntry(file) != null) {
+            fzip.extractEntryTo(/*file to extract*/file, /*target path*/"T:/", /*maintainEntryPath*/false, /*overwrite*/true);
+            done(null, {file: file, zip: zip, state: 'Success'})
+          } else {
+            done(null, {file: file, zip: zip, state: 'File does not exist within zip!', zipEntry: fzip.getEntry(file)})
+          }
+        }, function(err, responses) {
+          resolve(responses)
+        })
+      }
+    } catch(error) {
+      resolve('Error Occoured. You probably cant rollback this server. Soz | BETA Till NAS is setup')
+    }
+  })
+}
+
+module.exports.get_rollback_files = function get_rollback_files(playerArray, serverDir) {
+  return new Promise(function(resolve, reject){
+    var newPlayerArray = []
+    async.map(playerArray, function(player, done){
+      player = JSON.parse(player)
+      player.files = glob.sync(serverDir+'/Cookies/playerdata/'+serv.dirtyUUID(player.uuid)+'*').concat(glob.sync(serverDir+'/Cookies/playerdata/'+player.name+'*'))
+      done(null, player)
+    }, function(err, playerArray) {
+      resolve(playerArray)
+    })
+  })
+}
 
 module.exports.listServerArchives = function listServerArchives(ServerArchiveDir, limit) {
   return new Promise(function(resolve, reject){
@@ -422,6 +445,7 @@ module.exports.upAllServData = function upAllServData(){
     module.exports.getServerDirs().then(serverArray => {
       async.map(serverArray, function(serverObj, done){
         promises.push(module.exports.upServData(serverObj))
+        done()
       })
       Promise.all(promises).then(result => {resolve(result)})
     })

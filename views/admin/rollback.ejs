@@ -26,21 +26,40 @@
           if (this.value == 'playerdata') {
             socket.emit('get_server_playerdata_files', JSON.parse($('#serverList option:selected').val()).server_folder)
           } else {
-            $("#files").empty();
+            $("#players").empty();
           }
         })
         socket.on('return_server_playerdata_files', function(players) {
-          $("#files").empty(); // remove old options
+          $("#players").empty(); // remove old options
+          $("#files").empty();
           players.forEach(function(player) {
-            $("#files").append($("<option></option>").attr("value", {uuid: player.UUID, name: player._id}).text(player._id));
+            $("#players").append($("<option></option>").attr("value", JSON.stringify({uuid: player.UUID, name: player._id})).text(player._id));
           });
         })
 
+        $('#players').on('change', function() {
+          socket.emit('get_rollback_files', {playerArray: $('#players').val(), serverDir: JSON.parse($('#serverList option:selected').val()).server_folder})
+        })
+
+        socket.on('return_get_rollback_files', function(playerArray){
+          $("#files").empty(); // remove old options
+          playerArray.forEach(function(player) {
+            player.files.forEach(function(file) {
+              $("#files").append($("<option></option>").attr("value", file.replace(JSON.parse($('#serverList option:selected').val()).server_folder, '')).text(file));
+            })
+          });
+        })
 
         $('#rollback').on('click', function() {
-          if (confirm("Are you sure you want to rollback [USERNAME'S] playerdata to [XHOURSAGO]?")) {
-            alert('DONE! Jk not yet')
-          }
+          socket.emit('rollback_files', {
+            zip: $('#zipList option:selected').val(),
+            server: JSON.parse($('#serverList option:selected').val()).server_folder,
+            files: $('#files').val()
+          })
+        })
+
+        socket.on('return_rollback_files', function(response) {
+          alert(JSON.stringify(response));
         })
       });
     </script>
@@ -60,7 +79,8 @@
       <option value='playerdata'>Playerdata</option>
       <option value='region'>Region [WIP]</option>
     </select>
-    <p>Select Players (Ctrl-Click for Multiple)</p>
+    <p>Select Players (Ctrl-Click for Multiple) | Files to rollback: </p>
+    <select style='min-height:500px; min-width: 200px;' multiple id="players"></select>
     <select style='min-height:500px; min-width: 200px;' multiple id="files"></select>
     <br>
     <button id='rollback' type="button">ROLLBACK</button>
