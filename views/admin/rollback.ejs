@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Admin Rollback</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.20.1/moment-with-locales.min.js"></script>
+    <script>
+      const socket = io();
+      $(document).ready(function() {
+        socket.emit('get_server_archives', {server: JSON.parse($('#serverList option:selected').val()).backup_folder, limit: -1})
+        socket.emit('get_server_playerdata_files', JSON.parse($('#serverList option:selected').val()).server_folder)
+        $('#serverList').on('change', function() {
+          socket.emit('get_server_archives', {server: JSON.parse(this.value).backup_folder, limit: -1})
+          socket.emit('get_server_playerdata_files', JSON.parse(this.value).server_folder)
+        })
+        socket.on('return_server_archives', function(archives) {
+          $("#zipList").empty(); // remove old options
+          $.each(archives, function(key,value) {
+            $("#zipList").append($("<option></option>").attr("value", value.dir).text(value.fromNow + ' | ' + moment(value.date).format('dddd Do, MMM YYYY | hh:mm a')));
+          });
+        })
+
+        $('#rollbackType').on('change', function() {
+          if (this.value == 'playerdata') {
+            socket.emit('get_server_playerdata_files', JSON.parse($('#serverList option:selected').val()).server_folder)
+          } else {
+            $("#files").empty();
+          }
+        })
+        socket.on('return_server_playerdata_files', function(players) {
+          $("#files").empty(); // remove old options
+          players.forEach(function(player) {
+            $("#files").append($("<option></option>").attr("value", {uuid: player.UUID, name: player._id}).text(player._id));
+          });
+        })
+
+
+        $('#rollback').on('click', function() {
+          if (confirm("Are you sure you want to rollback [USERNAME'S] playerdata to [XHOURSAGO]?")) {
+            alert('DONE! Jk not yet')
+          }
+        })
+      });
+    </script>
+  </head>
+
+  <body>
+    <p>Select Server</p>
+    <select id='serverList'>
+      <% servers.forEach(function(folder) { %>
+        <option value='{"backup_folder":"<%- folder.backup_folder %>", "server_folder":"<%- folder.server %>"}'><%- folder.server + ' || ' + folder.backup_folder %></option>
+      <% }) %>
+    </select>
+    <p>Select Archive</p>
+    <select id="zipList"></select>
+    <p>Select Rollback Type</p>
+    <select id="rollbackType">
+      <option value='playerdata'>Playerdata</option>
+      <option value='region'>Region [WIP]</option>
+    </select>
+    <p>Select Players (Ctrl-Click for Multiple)</p>
+    <select style='min-height:500px; min-width: 200px;' multiple id="files"></select>
+    <br>
+    <button id='rollback' type="button">ROLLBACK</button>
+  </body>
+</html>
