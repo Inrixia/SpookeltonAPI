@@ -27,8 +27,6 @@ passport.deserializeUser(function(user, done) {
   done(null, user);
 });
 
-
-
 passport.use(new DiscordStrategy({
     clientID: '387098195580289025',
     clientSecret: '***REMOVED***',
@@ -53,7 +51,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 function checkAuth(rank, req, res, next) {
-  if (req.isAuthenticated()) return next();
+  if (req.isAuthenticated() && req.user.id != null) return next();
   res.redirect('/login');
 }
 
@@ -91,8 +89,14 @@ app.get('/callback',
     } // auth success
 );
 
-app.get('/admin/giveaway', function(req, res) {
+app.get('/admin/giveaway', checkAdminAuth, function(req, res) {
   res.render('admin/giveaway')
+})
+
+app.get('/giveaway', function(req, res) {
+  serv.getCurrentGiveaway().then(data => {
+		res.render('giveaway', { games: data.games, user: req.user });
+	})
 })
 
 //app.get('/bulk', function(req, res) {
@@ -100,37 +104,71 @@ app.get('/admin/giveaway', function(req, res) {
 //  res.send('Working')
 //})
 
-app.get('/admin/api/update', function(req, res) {
+app.get('/reset', checkAdminAuth, function(req, res) {
+  //serv.updateGamesIndex()
+})
+
+app.get('/admin/api/update', checkAdminAuth, function(req, res) {
   serv.upAllServData().then(result =>{
     res.json(result)
   })
 })
 
-app.get('/admin/api/dump', checkAuth, function(req, res) {
+app.get('/admin/api/dump', checkAdminAuth, function(req, res) {
   db.get().collection('servers').find({}).toArray(function(err, data){
     res.json(data);
   })
 });
 
-app.get('/admin/api/listServerDirs', function(req, res) {
+app.get('/admin/api/listServerDirs', checkAuth, function(req, res) {
   serv.getServerDirs().then(dirArray => {
     res.json(dirArray)
   })
 })
 
-app.get('/admin/api/listServerArchiveDirs', function(req, res) {
+app.get('/admin/api/listServerArchiveDirs', checkAuth, function(req, res) {
   serv.listServerArchiveDirs().then(dirArray => {
     res.json(dirArray)
   })
 })
 
-app.get('/admin/api/listServerArchives', function(req, res) {
+app.get('/admin/api/listServerArchives', checkAuth, function(req, res) {
   serv.listServerArchives(req.query.dir, req.query.limit).then(archives => {
     res.json(archives)
   })
 })
 
-app.get('/admin/api/rollback', function(req, res) {
+app.get('/admin/api/listClaimedRegions', checkAdminAuth, function(req, res) {
+  if (!req.query.server){
+    db.get().collection('servers').find({}, {dir: 1, name: 1, _id: 0}).toArray(function(err, serverArray){
+      res.json({error: 'Missing Server', servers: serverArray})
+    })
+  } else {
+		serv.upAllServData().then(result =>{
+			serv.claimedRegions(req.query.server).then(data => {
+				res.json(data)
+			})
+		})
+  }
+})
+
+app.get('/admin/api/wipeRegions', checkAdminAuth, function(req, res) {
+  if (!req.query.server){
+    db.get().collection('servers').find({}, {dir: 1, name: 1, _id: 0}).toArray(function(err, serverArray){
+      res.json({error: 'Missing Server', servers: serverArray})
+    })
+  } else {
+		serv.upAllServData().then(result =>{
+			serv.claimedRegions(req.query.server).then(regionArray => {
+				serv.wipeRegions(req.query.server, regionArray).then(status => {
+					res.json(status)
+				})
+			})
+	  })
+  }
+})
+
+app.get('/admin/api/rollback', checkAdminAuth, function(req, res) {
   console.log(req.query)
   serv.rollback(req.query.type, {uuid: req.query.uuid, username: req.query.username}, req.query.zip).then(response => {
     res.json(response)
@@ -155,15 +193,14 @@ app.get('/admin/api/playerdata', checkAuth, function(req, res) {
     thaumcraft: req.query.thaumcraft,
     ftb: req.query.ftb
   }
-  serv.checkOptions(options).then(opt => {
+  serv.getPlayerNameUUID(options).then(opt => {
     if (opt.error) res.send(opt.error)
-    options = opt.options
     if (!req.query.server){
       db.get().collection('servers').find({}, {dir: 1, name: 1, _id: 0}).toArray(function(err, serverArray){
         res.json({error: 'Missing Server', servers: serverArray})
       })
     } else {
-      serv.getPlayerData(options, req.query.server).then(data => {
+      serv.getPlayerData(opt.options, req.query.server).then(data => {
         res.json(data);
       })
     }
@@ -178,6 +215,7 @@ app.get('/logout', function(req, res) {
     req.logout();
     res.redirect('/giveaway');
 });
+
 app.get('/info', checkAuth, function(req, res) {
     where.is(req.ip, function(err, result){
       data = {
@@ -191,10 +229,5 @@ app.get('/info', checkAuth, function(req, res) {
       res.json(data);
     })
 });
-app.get('/giveaway', function(req, res) {
-  db.get().collection('giveaway_games').find({}).toArray(function(err, data){
-    res.render('giveaway', { games: data, user: req.user });
-  })
-})
 
 module.exports = app;

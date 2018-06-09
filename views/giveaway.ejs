@@ -5,14 +5,17 @@
     <title>Spookelton Giveaway</title>
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+		<link href="css/giveaway.css" rel="stylesheet">
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
     <script src="http://underscorejs.org/underscore-min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.js"></script>
+		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 
     <script>
-    function updateEntries(game) {
+    /*function updateEntries(game) {
       console.log(game)
       var socket = io();
       socket.emit('add_game', game);
@@ -24,11 +27,29 @@
         $('.' + game.gameid).addClass('disable');
         $('.' + game.gameid).removeClass('fa fa-shopping-cart');
       });
-    };
+    };*/
+		$(function() {
+			$("#entries_list").sortable({
+				stop: function() {
+					var entryArray = []
+					$('#entries_list').children().each(function(index, value) {
+						entryArray.push({'index': index, 'id': $(value).attr('id')})
+					})
+					console.log(entryArray);
+				}
+			})
+		});
+		function addEntry(game) {
+			if ($('.'+game.id).attr('stat') == 'add') {
+				$('#entries_list').append($('.'+game.id))
+				$('.'+game.id).attr('stat', "remove")
+			} else {
+				$('#games').append($('.'+game.id))
+				$('.'+game.id).attr('stat', "add")
+			}
+		}
     </script>
-    <link href="css/giveaway.css" rel="stylesheet">
   </head>
-
   <body>
     <img src='../images/GiveawayBanner.png' style='width: 98.8vw;'>
     <div class="content">
@@ -44,51 +65,32 @@
           <button class="btn login-button"><img class="login-image" src='https://cdn.discordapp.com/avatars/<%- user.id %>/<%- user.avatar %>.png?size=128'><%- user.username %></button>
         <% } %>
       </div>
-
-      <ul style="width: 98vw">
-        <% games.forEach(function(game) { %>
-
-            <li class="imgCont">
-              <div class="imgDescription imgDesNorm">
-                <h3 align="center" padding-top: 300px ><%- game.name %></h3>
-               
-              </div>
-              <img class="imgnorm" src='<%- game.data.header_image %>'></img>
-            <div class="imgOver">
-                     <a data-toggle="collapse" href="#<%- game._id %>"><span class="  glyphicon glyphicon-question-sign"></span></a>
-               <!--  <% if (typeof(user) !== 'undefined') { %>
-                  <a href='javascript:;' onclick='javascript:updateEntries(<%- '{"name":"' + game.name + '","id":"' + user.id + '","gameid":"' + game._id + '","img":"' + game.image + '"}' %>)'><i class='<%- game._id %> add fa fa-plus' aria-hidden="true"></i></a>-->
-                <% } %> 
-              </div>
-             
+			<div id='entries'>
+				<h2>Your Entries</h2>
+				<ol style="width: 98vw" id='entries_list' class="connectedSortable"></ol>
+			</div>
+			<br>
+			<div id='giveaway_games'>
+				<ol style="width: 98vw" id='games'>
+	        <% for (key in games) { %>
+						<li class="imgCont <%- games[key]._id %>" id="<%- games[key]._id %>" stat='add'>
+							<a href="javascript:;"onclick="javascript:addEntry(<%- "{'user':'" + user.id + "','id':'" + games[key]._id + "'}" %>)">
+	            	<div class="imgDescription imgDesNorm">
+									<h4 align="center" style='margin-top: 40px;'><%- games[key].name %></h4>
+									<div style='text-align: center;'><% for (i in games[key].data.genres) { %>
+										<% if (i != games[key].data.genres.length -1) { %>
+											<span><b><%- games[key].data.genres[i].description %></b>,</span>
+										<% } else { %>
+											<span><b><%- games[key].data.genres[i].description %></b></span>
+										<% } %>
+									<% }; %></div>
+	              </div>
+	              <img class="imgnorm" src='<%- games[key].data.header_image %>'></img>
+							</a>
             </li>
-
-             <div class="panel-collapse collapse" id="<%- game._id %>" style=" padding-right: 50px" >
-              <div class="panel-body" id="info-panel">
-                <div class="row" style="  overflow-y: hidden;">
-                  <div class="col-sm-7">
-                  <video>
- 				<!-- video for game that jason wont work with-->
-                  </video>
-                  </div>
-                  <div class="col-sm-5" style="height: 25vw">
-                  <% if (game.data.detailed_description) { %>
-                  <p ><%- game.data.detailed_description %></p>
-                <% } else { %>
-                  <p>Game description unavailable... Have a cookie <3</p>
-                <% } %>
-                  </div>
-                </div>
-                <div class="panel-footer" style="background-color: grey; align-content: right;">
-                	<button style="color: black">Priority up</button>
-                	<button style="color: black">Priority down</button> 
-                	<button style="color:black">Remove Priority</button>
-                </div>
-                </div>
-              </div>
-          </a>
-        <% }); %>
-      </ul>
+	        <% }; %>
+	      </ol>
+			</div>
     </div>
   </body>
 </html>

@@ -38,10 +38,10 @@
         })
 
         $('#players').on('change', function() {
-          socket.emit('get_rollback_files', {playerArray: $('#players').val(), serverDir: JSON.parse($('#serverList option:selected').val()).server_folder})
+          socket.emit('get_playerdata_files', {playerArray: $('#players').val(), serverDir: JSON.parse($('#serverList option:selected').val()).server_folder})
         })
 
-        socket.on('return_get_rollback_files', function(playerArray){
+        socket.on('return_get_playerdata_files', function(playerArray){
           $("#files").empty(); // remove old options
           playerArray.forEach(function(player) {
             player.files.forEach(function(file) {

@@ -1,0 +1,10 @@
+.ftpconfig
+.ftpignore
+id_rsa
+.DS_Store
+.git
+node_modules/
+db/
+Z/
+X/
+./**/desktop.ini

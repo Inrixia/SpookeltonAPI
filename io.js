@@ -1,49 +1,53 @@
 const io = require('socket.io')(),
 db = require('./db'),
 serv = require('./serverAPI');
-
 //ioClient = require('socket.io-client');
 var uid = [];
 
 io.on('connection', function (socket) {
-  socket.on('add_game', function (data) {
-    console.log(data);
-  });
+	socket.on('add_game', function (data) {
+	  console.log(data);
+	});
 
-  socket.on('game_search', function (search) {
-    db.get().collection('games_pure').find( { $text: { $search: search } }, { appid: 1, name: 1, in_giveaway: 1 } ).toArray(function(err, info) { // Find from GameCollection where game name matches textbox search
-      socket.emit('return_game_search', { info });
-    })
-  });
+	socket.on('game_search', function (search) {
+	  db.get().collection('steam_games_index').find( { $text: { $search: search } }, { appid: 1, name: 1, in_giveaway: 1 } ).toArray(function(err, info) { // Find from GameCollection where game name matches textbox search
+	    socket.emit('return_game_search', { info });
+	  })
+	});
 
-  socket.on('get_server_archives', function (data) {
-    serv.listServerArchives(data.server, data.limit).then(archives => {
-      socket.emit('return_server_archives', archives);
-    })
-  });
+	socket.on('get_server_archives', function (data) {
+	  serv.listServerArchives(data.server, data.limit).then(archives => {
+	    socket.emit('return_server_archives', archives);
+	  })
+	});
 
-  socket.on('get_server_playerdata_files', function (serverDir) {
-    serv.getServerPlayers(serverDir).then(serverPlayers => {
-      socket.emit('return_server_playerdata_files', serverPlayers);
-    })
-  });
+	socket.on('get_server_playerdata_files', function (serverDir) {
+	  serv.getServerPlayers(serverDir).then(serverPlayers => {
+	    socket.emit('return_server_playerdata_files', serverPlayers);
+	  })
+	});
 
-  socket.on('get_rollback_files', function(data){
-    serv.get_rollback_files(data.playerArray, data.serverDir).then(playerArray => {
-      socket.emit('return_get_rollback_files', playerArray)
-    })
-  })
+	socket.on('get_playerdata_files', function(data){
+	  serv.get_playerdata_files(data.playerArray, data.serverDir).then(playerArray => {
+	    socket.emit('return_get_playerdata_files', playerArray)
+	  })
+	})
 
-  socket.on('game_add', function(appid){
-    getData(appid, function(data) {
-      db.get().collection('giveaway_games').insert([data], function (err, result) { // Insert the data as a new document into the games collection
-        db.get().collection('games_pure').update({ appid: appid }, {$set: {"in_giveaway":true}}, function (err) { // Insert the data as a new document into the games collection
-          if(err){console.log(err);}
-        });
-        socket.emit('return_game_add', err)
-      })
-    })
-  })
+	socket.on('game_add', function(appid){
+		serv.getSteamGameData(appid).then(data => {
+			serv.indexGame(appid, data).then(
+				serv.getCurrentGiveaway().then(giveaway => {
+					serv.addGiveawayGame(appid, giveaway._id).then(err => {
+						socket.emit('return_game_add', err)
+					})
+				})
+			)
+		})
+	})
+
+	//serv.modifyGiveawayGame(data[0].data._id, appid, data[0]).then(err => {
+	//	socket.emit('return_game_add', err)
+	//})
 
   socket.on('rollback_files', function (data) {
     serv.rollbackFiles(data.zip, data.server, data.files).then(response => {
@@ -52,31 +56,6 @@ io.on('connection', function (socket) {
   });
 
 });
-
-function getData (id, done) {
-  var url = 'http://store.steampowered.com/api/appdetails/?appids=' + id; // Generate ID for retriving game info
-  http.get(url, function(res){ // Preform http request
-    var body = '';
-    res.on('data', function(chunk){
-        body += chunk;
-    });
-
-    res.on('end', function(){
-      try {
-        var steamRes = JSON.parse(body); // Prase returned game info into json object
-        steamRes[id].name = steamRes[id].data.name; // Create a new name value at the root of the document
-        delete steamRes[id].data.name; // Delete the old name value in the subdocument data
-        steamRes[id]._id = id; // Set the id of the document to the game id
-        steamRes = steamRes[id]; // Set steamres to equal the updated version and return it
-        done(steamRes);
-      } catch (e) {
-        console.log(id, ": is not JSON");
-      }
-    });
-  }).on('error', function(e){
-    console.log("http error: ", e);
-  });
-}
 
   /*
   socket.on('DepositReturn', function (data) {

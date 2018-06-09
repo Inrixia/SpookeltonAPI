@@ -13,6 +13,23 @@ body {
   margin: 0;
 }
 
+#entries {
+	background: #313131;
+	padding-bottom: 20px;
+	min-height: 100px;
+}
+
+#entries h2 {
+	padding-top: 10px;
+}
+
+#entries_list {
+
+}
+
+#entries_list li {
+}
+
 .imgnorm {
   max-width: 100%;
 }
@@ -159,6 +176,11 @@ a {
     color: white;
 }
 
+a:hover {
+	text-decoration: none;
+	color: #60b5ff;
+}
+
 li {
     display: inline-block;
     vertical-align: top;
@@ -232,4 +254,3 @@ ul {
 
   overflow-x: hidden;
 }
-

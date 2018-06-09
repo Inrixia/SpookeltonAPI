@@ -1,5 +1,7 @@
 node_modules/
 db/
+ds/
+as/
 Z/
 X/
 ./**/desktop.ini
