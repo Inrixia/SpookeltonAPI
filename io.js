@@ -5,10 +5,6 @@ serv = require('./serverAPI');
 var uid = [];
 
 io.on('connection', function (socket) {
-	socket.on('add_game', function (data) {
-	  console.log(data);
-	});
-
 	socket.on('game_search', function (search) {
 	  db.get().collection('steam_games_index').find( { $text: { $search: search } }, { appid: 1, name: 1, in_giveaway: 1 } ).toArray(function(err, info) { // Find from GameCollection where game name matches textbox search
 	    socket.emit('return_game_search', { info });
@@ -31,6 +27,30 @@ io.on('connection', function (socket) {
 	  serv.get_playerdata_files(data.playerArray, data.serverDir).then(playerArray => {
 	    socket.emit('return_get_playerdata_files', playerArray)
 	  })
+	})
+
+	socket.on('game_patron_change', function(game){
+		serv.getCurrentGiveaway().then(giveaway => {
+			serv.modifyGiveawayGame(giveaway._id, game._id, game).then(err => socket.emit('return_game_patron_change', err))
+		})
+	})
+
+	socket.on('game_delete', function(appid){
+		serv.getCurrentGiveaway().then(giveaway => {
+			serv.deleteGiveawayGame(giveaway._id, appid).then(err => socket.emit('return_game_delete', err))
+		})
+	})
+
+	socket.on('giveaway_sub_game', function(data) {
+		serv.subGiveawayGame(data.gameID, data.memberID, data.subIndex).then(info => {
+			socket.emit('return_giveaway_sub_game', info)
+		})
+	})
+
+	socket.on('giveaway_unsub_game', function(data) {
+		serv.unsubGiveawayGame(data.gameID, data.memberID).then(info => {
+			socket.emit('return_giveaway_unsub_game', info)
+		})
 	})
 
 	socket.on('game_add', function(appid){

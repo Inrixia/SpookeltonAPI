@@ -12,43 +12,97 @@
   <link href="../css/giveaway.css" rel="stylesheet">
   <script>
   var socket = io();
+	var giveaway_games = <% if (games) { %> <%- JSON.stringify(games) %> <% } else { %> [] <% } %>
+	var search_results = {}
   $(document).ready(function() {
     $('#search').on('keyup', _.debounce(doMe, 512));
     function doMe() {
       socket.emit('game_search', $(this).val());
       socket.on('return_game_search', function (data) {
+				var sarch_results = {}
         output = ''
         data.info.forEach(function(game) {
-          console.log(game.in_giveaway)
-          if (game.in_giveaway === true) {
-            output += ('<a style="pointer-events: none;" class="'+game.appid+'" href="javascript:addGame('+game.appid+')"><li class="imgCont"><div class="imgDescription imgDesNorm"><h3>'+game.name+'%></h3></div><img style="opacity: 0.2;" class="imgnorm" onerror="remove404('+game.appid+')" src="http://cdn.edgecast.steamstatic.com/steam/apps/'+game.appid+'/header.jpg"></img></li><div class="imgOver"></div></a>');
-          } else {
-            output += ('<a class="'+game.appid+'" href="javascript:addGame('+game.appid+')"><li class="imgCont"><div class="imgDescription imgDesNorm"><h3>'+game.name+'%></h3></div><img class="imgnorm" onerror="remove404('+game.appid+')" src="http://cdn.edgecast.steamstatic.com/steam/apps/'+game.appid+'/header.jpg"></img></li><div class="imgOver"></div></a>');
+					search_results[game.appid] = game
+          if (game.appid in giveaway_games !== true) {
+            //output += ('<a style="pointer-events: none;" class="'+game.appid+'" href="javascript:addGame('+game.appid+')"><li class="imgCont"><div class="imgDescription imgDesNorm"><h3>'+game.name+'%></h3></div><img style="opacity: 0.2;" class="imgnorm" onerror="remove404('+game.appid+')" src="http://cdn.edgecast.steamstatic.com/steam/apps/'+game.appid+'/header.jpg"></img></li><div class="imgOver"></div></a>');
+          //} else {
+            output += ('<a class="'+game.appid+'" href="javascript:addGame('+game.appid+')"><li class="imgCont"><div class="imgDescription imgDesNorm"><h4 align="center" style="margin-top: 40px;">'+game.name+'</h4></div><img class="imgnorm" onerror="remove404('+game.appid+')" src="http://cdn.edgecast.steamstatic.com/steam/apps/'+game.appid+'/header.jpg"></img></li><div class="imgOver"></div></a>');
           }
         })
         $('#results').html(output);
       });
     };
   });
+	function gameDelete(appid){
+		socket.emit('game_delete', appid)
+    socket.on('return_game_delete', function(data){
+			if (!data.err) {
+				$('.'+appid).remove()
+				delete giveaway_games[appid]
+				if (search_results[appid]) {
+					$('#results').append('<a class="'+appid+'" href="javascript:addGame('+appid+')"><li class="imgCont"><div class="imgDescription imgDesNorm"><h4 align="center" style="margin-top: 40px;">'+search_results[appid].name+'</h4></div><img class="imgnorm" onerror="remove404('+appid+')" src="http://cdn.edgecast.steamstatic.com/steam/apps/'+appid+'/header.jpg"></img></li><div class="imgOver"></div></a>');
+				}
+			}
+		})
+	}
+	function patronChange(appid){
+		giveaway_games[appid].patronOnly = !giveaway_games[appid].patronOnly
+		socket.emit('game_patron_change', giveaway_games[appid])
+		socket.on('return_game_patron_change', function(data){
+			if (giveaway_games[appid].patronOnly) {
+				$('.button_'+appid).removeClass('btn-warning').addClass('btn-info').text('Make Open')
+			} else {
+				$('.button_'+appid).removeClass('btn-info').addClass('btn-warning').text('Make Patron Only')
+			}
+			//console.log(data);
+    })
+	}
   function addGame(appid){
     socket.emit('game_add', appid)
-    socket.on('return_game_add', function(data){
-      $('.'+appid).css('pointer-events', 'none').children().eq(0).children().eq(1).css('opacity','0.2')
-    })
+    socket.on('return_game_add', function(err){
+			$('.'+appid).remove()
+			giveaway_games[appid] = search_results[appid]
+			$('#games').append('<li class="imgCont existingGame '+appid+'" id="'+appid+'"><div class="imgDescription imgDesNorm"><h4 align="center" style="margin-top: 40px;">'+search_results[appid].name+'</h4><div style="text-align: center;"><a href="javascript:;"onclick="javascript:patronChange('+appid+')"><button type="button" class="btn button_'+appid+' btn-warning">Make Patron Only</button></a><a href="javascript:;"onclick="javascript:gameDelete('+appid+')"><button type="button" class="btn btn-danger">Delete</button></a></div></div><img class="imgnorm" src="http://cdn.edgecast.steamstatic.com/steam/apps/'+appid+'/header.jpg"></img></li><div class="imgOver"></div>');
+		})
   }
   function remove404(appid){
     $('.'+appid).remove()
   }
   </script>
-  <style>
-
-  </style>
 </head>
 <body>
 <div class="content">
   <h2>Type in the name of a game to search for it.</h2>
   <p>Use "" for a specific game & click to add</p>
   <input type="search" id="search"></input>
+	<div id='giveaway_games'>
+		<ol style="width: 98vw" id='games'>
+			<% for (key in games) { %>
+				<li class="imgCont existingGame <%- games[key]._id %>" id="<%- games[key]._id %>">
+					<div class="imgDescription imgDesNorm">
+						<h4 align="center" style='margin-top: 40px;'><%- games[key].name %></h4>
+						<div style='text-align: center;'>
+							<% if (games[key].patronOnly) { %>
+								<a href="javascript:;"onclick="javascript:patronChange('<%- games[key]._id %>')">
+									<button type="button" class="btn button_<%- games[key]._id %> btn-info">Make Open</button>
+								</a>
+							<% } else { %>
+								<a href="javascript:;"onclick="javascript:patronChange('<%- games[key]._id %>')">
+									<button type="button" class="btn button_<%- games[key]._id %> btn-warning">Make Patron Only</button>
+								</a>
+							<% } %>
+							<a href="javascript:;"onclick="javascript:gameDelete('<%- games[key]._id %>')">
+								<button type="button" class="btn btn-danger">Delete</button>
+							</a>
+						</div>
+					</div>
+					<img class="imgnorm" src='<%- games[key].data.header_image %>'></img>
+				</li>
+			<% }; %>
+		</ol>
+	</div>
+	<hr />
+	<b><p>Search Results</p>
   <ul id="results"></ul>
 </div>
 

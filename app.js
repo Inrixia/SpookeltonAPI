@@ -69,6 +69,35 @@ function checkAdminAuth(req, res, next) {
   } else {res.render('403.ejs', {type: '<span style="color: #FF00F2;">Admins</span>'})}
 }
 
+
+function checkRegularAuth(req, res, next) {
+  req.session.returnTo = req.path;
+  if (req.isAuthenticated() && req.user.id) {
+    serv.getDiscordUserRoles(req.user.id).then(roles => {
+      if(roles.some(function(role){
+        if (role.id == '317241332013989889') {return true}
+        return false
+      })) {
+        return next();
+      } else {res.render('403.ejs', {type: '<span style="color: #00daff;">Regulars</span>'})}
+    })
+  } else {res.render('403.ejs', {type: '<span style="color: #00daff;">Regulars</span>'})}
+}
+
+function checkPatronAuth(req, res, next) {
+  req.session.returnTo = req.path;
+  if (req.isAuthenticated() && req.user.id) {
+    serv.getDiscordUserRoles(req.user.id).then(roles => {
+      if(roles.some(function(role){
+        if (role.id == '412424055661133824') {return true}
+        return false
+      })) {
+        return next();
+      } else {res.render('403.ejs', {type: '<span style="color: #ffca00;">Patrons</span>'})}
+    })
+  } else {res.render('403.ejs', {type: '<span style="color: #ffca00;">Patrons</span>'})}
+}
+
 app.get('/login', passport.authenticate('discord', { scope: scopes }), function(req, res) {});
 app.get('/callback',
     passport.authenticate('discord', { failureRedirect: '/login' }), function(req, res) {
@@ -90,13 +119,21 @@ app.get('/callback',
 );
 
 app.get('/admin/giveaway', checkAdminAuth, function(req, res) {
-  res.render('admin/giveaway')
+	serv.getCurrentGiveaway().then(data => {
+		res.render('admin/giveaway', { games: data.games, user: req.user });
+	})
 })
 
-app.get('/giveaway', function(req, res) {
-  serv.getCurrentGiveaway().then(data => {
-		res.render('giveaway', { games: data.games, user: req.user });
+app.get('/giveaway', checkRegularAuth, function(req, res) {
+	serv.getDiscordUserRoles(req.user.id).then(roles => {
+	  serv.getCurrentGiveaway().then(data => {
+			res.render('giveaway', { games: data.games, user: req.user, patron: roles.some(function(role){if (role.id == '412424055661133824') {return true}})});
+		})
 	})
+})
+
+app.get('/admin/new_giveaway', checkAdminAuth, function(req, res) {
+	serv.newGiveaway().then(data => res.json(data))
 })
 
 //app.get('/bulk', function(req, res) {
@@ -105,7 +142,7 @@ app.get('/giveaway', function(req, res) {
 //})
 
 app.get('/reset', checkAdminAuth, function(req, res) {
-  //serv.updateGamesIndex()
+  serv.updateGamesIndex()
 })
 
 app.get('/admin/api/update', checkAdminAuth, function(req, res) {

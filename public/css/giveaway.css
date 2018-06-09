@@ -78,6 +78,22 @@ body {
   color: white;
 }
 
+.existingGame .imgDescription {
+	visibility: visible;
+  opacity: 1;
+  background-color: rgba(0,0,0,0.4);
+  height: 100%;
+	color: white;
+}
+
+.excludedGame .imgDescription {
+	visibility: visible;
+  opacity: 1;
+  background-color: rgba(0,0,0,0.8);
+  height: 100%;
+	color: white;
+}
+
 .imgDesSmall {
   padding-left: 4px;
   padding-top: 4px;

@@ -139,6 +139,7 @@ module.exports.addGiveawayGame = function addGiveawwayGame(gameID, giveawayID) {
 		db.get().collection("giveaway_games").findOne({"_id": gameID}, function(err, data) {
 			var query = {}
 			query["games."+gameID] = data
+			if (err) { resolve(err) }
 			db.get().collection('giveaway').update({"_id": giveawayID}, {$set: query}, {upsert: true}, function(err, data) {
 	      resolve({err, data})
 	    })
@@ -146,22 +147,34 @@ module.exports.addGiveawayGame = function addGiveawwayGame(gameID, giveawayID) {
 	})
 }
 
+module.exports.subGiveawayGame = function subGiveawayGame(gameID, memberID, subIndex) {
+	return new Promise(function(resolve, reject){
+		serv.getCurrentGiveaway().then(giveaway => {
+			db.get().collection('giveaway').update({'_id': giveaway['_id']}, {$set: {["games."+gameID+".applicants."+memberID]: subIndex}}, {upsert: true})
+			db.get().collection('users').update({'_id': memberID}, {$set: {['giveaway.'+giveaway._id+'.applied.'+gameID]: subIndex}}, {upsert: true}, function(err, data) {
+				resolve({err, data})
+			})
+		})
+	})
+}
+
 module.exports.indexGame = function indexGame(appid, data) {
 	return new Promise(function(resolve, reject){
 		db.get().collection("giveaway_games").update({"_id": appid}, {$set: data}, {upsert: true}, function(err, data) {
-      		resolve({err, data})
-    	})
+    		resolve({err, data})
+  	})
 	})
 }
 
 // Remove a giveaway game from a user
-module.exports.userRemoveGiveawayGame = function userRemoveGiveawayGame(memberID, giveawayID, gameID) {
+module.exports.unsubGiveawayGame = function unsubGiveawayGame(gameID, memberID) {
 	return new Promise(function(resolve, reject){
-		var query = {}
-		query["giveaway."+giveawayID+".applied."+gameID] = true
-		db.get().collection('users').update({"_id": memberID}, {$unset: query}, function(err, data) {
-      resolve({err, data})
-    })
+		serv.getCurrentGiveaway().then(giveaway => {
+			db.get().collection('giveaway').update({'_id': giveaway['_id']}, {$unset: {["games."+gameID+".applicants."+memberID]: true}}, {upsert: true})
+			db.get().collection('users').update({"_id": memberID}, {$unset: {['giveaway.'+giveaway._id+'.applied.'+gameID]: true}}, {upsert: true}, function(err, data) {
+	      resolve({err, data})
+	    })
+		})
 	})
 }
 
@@ -184,18 +197,27 @@ module.exports.getCurrentGiveaway = function getCurrentGiveaway() {
 	})
 }
 
+// Remove a game from the giveaway
+module.exports.deleteGiveawayGame = function deleteGiveawayGame(giveawayID, gameID) {
+	return new Promise(function(resolve, reject){
+		var query = {}
+		query['games.'+gameID] = {'$elemMatch':{'_id': gameID}}
+		db.get().collection('giveaway').update({},{$unset: query}, function (err, result) {
+			resolve({err, result})
+			if(err){console.log(err);}
+		})
+  })
+}
+
 // Add/Update a game in the giveaway
 module.exports.modifyGiveawayGame = function modifyGiveawayGame(giveawayID, gameID, data) {
 	return new Promise(function(resolve, reject){
 		var query = {}
 		query["games."+gameID] = data
 		db.get().collection('giveaway').update({"_id": giveawayID}, {$set: query}, function (err, result) {
-    	resolve(err)
+    	resolve({err, result})
 			if(err){console.log(err);}
 		})
-		db.get().collection('steam_games_index').update({appid: gameID}, {$set: {"in_giveaway":true}}, function (err) { // Insert the data as a new document into the games collection
-			if(err){console.log(err);}
-		});
   })
 }
 
@@ -220,26 +242,25 @@ module.exports.updateGamesIndex = function updateGamesIndex() {
 // Gets store data for a steam game
 module.exports.getSteamGameData = function getSteamGameData (id) {
 	return new Promise(function(resolve, reject){
-	  http.get('http://store.steampowered.com/api/appdetails/?appids='+id, function(res){ // Preform http request
-	    var body = '';
-	    res.on('data', function(chunk){
-	        body += chunk;
-	    });
-	    res.on('end', function(){
-	      try {
-	        var steamRes = JSON.parse(body); // Prase returned game info into json object
-	        steamRes[id].name = steamRes[id].data.name; // Create a new name value at the root of the document
-	        delete steamRes[id].data.name; // Delete the old name value in the subdocument data
-	        steamRes[id]._id = id; // Set the id of the document to the game id
-	        steamRes = steamRes[id]; // Set steamres to equal the updated version and return it
-	        resolve(steamRes);
-	      } catch (e) {
-	        console.log(id, ": is not JSON");
-	      }
-	    });
-	  }).on('error', function(e){
-	    console.log("http error: ", e);
-	  });
+		request.get({ // Generate the key used to download videos
+			url: 'http://store.steampowered.com/api/appdetails/?appids='+id
+		}, function (error, resp, body) {
+			if (error) {
+				console.log("http error: ", e);
+			} else {
+				try {
+					var steamRes = JSON.parse(body); // Prase returned game info into json object
+					steamRes[id].name = steamRes[id].data.name; // Create a new name value at the root of the document
+					delete steamRes[id].data.name; // Delete the old name value in the subdocument data
+					steamRes[id]._id = id; // Set the id of the document to the game id
+					steamRes[id].applicants = {}
+					steamRes = steamRes[id]; // Set steamres to equal the updated version and return it
+					resolve(steamRes);
+				} catch (e) {
+					console.log(id, ": encountered a ERROR:", e);
+				}
+			}
+		})
 	})
 }
 
