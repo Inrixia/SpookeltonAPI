@@ -43,8 +43,8 @@ body {
   margin: 0;
   padding: 15px;
   -webkit-transition: opacity 0.5s;
+	width: 100%;
 }
-
 .search {
     float: right;
     display: inline-block;
@@ -54,6 +54,7 @@ body {
     text-align: right;
     width: 390px;
 }
+
 .search input {
     width: 170px;
 }
@@ -92,6 +93,23 @@ body {
   background-color: rgba(0,0,0,0.8);
   height: 100%;
 	color: white;
+}
+
+.imgCont:hover .inverseImgDescription {
+	visibility: hidden;
+  opacity: 0;
+}
+
+.inverseImgDescription {
+	position: absolute;
+	visibility: visible;
+  color: white;
+  opacity: 1;
+  margin: 0;
+	height: 100%;
+	width: 100%;
+	background-color: rgba(0,0,0,0.4);
+  -webkit-transition: opacity 0.5s;
 }
 
 .imgDesSmall {
@@ -225,11 +243,6 @@ ul {
 
 .content-header {
   padding-left: 42% !important;
-}
-
-.imgDescription {
-  text-align: left;
-  width: 100%;
 }
 
 .nav-wrapper {

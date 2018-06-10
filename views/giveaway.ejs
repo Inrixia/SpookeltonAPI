@@ -17,21 +17,26 @@
     <script>
 		var socket = io();
 		$(function() {
+			$('#entries_list').children().each(function(index, value) {
+				$('#entries_list').children().eq($(this).find(".inverseImgDescription h1").text()).after(this);
+			})
 			$("#entries_list").sortable({
 				stop: function() {
-					var entryArray = []
 					$('#entries_list').children().each(function(index, value) {
-						entryArray.push({'index': index, 'id': $(value).attr('id')})
+						socket.emit('giveaway_sub_game', {gameID: this.id, memberID: '<%- user.id %>', subIndex: $(this).index()})
+						$(this).find(".inverseImgDescription h1").text($(this).index())
 					})
 				}
 			})
 		});
-		function modEntry(game) {
+		function modEntry(game, update) {
 			if ($('.'+game.id).attr('stat') == 'add') {
-				socket.emit('giveaway_sub_game', {gameID: game.id, memberID: '<%- user.id %>', subIndex: 1})
+				$('#entries_list').append($('.'+game.id))
+				$('.'+game.id).attr('stat', "remove")
+				$('.'+game.id+' .inverseImgDescription').removeClass('hidden')
+				$('.'+game.id+' .inverseImgDescription h1').text($('.'+game.id).index())
+				socket.emit('giveaway_sub_game', {gameID: game.id, memberID: '<%- user.id %>', subIndex: $('.'+game.id).index()})
 		    socket.on('return_giveaway_sub_game', function(info){
-					$('#entries_list').append($('.'+game.id))
-					$('.'+game.id).attr('stat', "remove")
 					console.log(game.id, info);
 				})
 			} else {
@@ -39,6 +44,7 @@
 		    socket.on('return_giveaway_unsub_game', function(info){
 					$('#games').append($('.'+game.id))
 					$('.'+game.id).attr('stat', "add")
+					$('.'+game.id+' .inverseImgDescription').addClass('hidden')
 					console.log(game.id, info);
 				})
 			}
@@ -67,6 +73,9 @@
 						if (user.id in games[key].applicants) { %>
 							<li class="imgCont <%- games[key]._id %>" id="<%- games[key]._id %>" stat='remove'>
 								<a href="javascript:;"onclick="javascript:modEntry(<%- "{'user':'" + user.id + "','id':'" + games[key]._id + "'}" %>)">
+									<div class="inverseImgDescription">
+										<b><h1 align="center" style='margin-top: 40px;'><%- games[key].applicants[user.id] %></h1></b>
+									</div>
 		            	<div class="imgDescription imgDesNorm">
 										<h4 align="center" style='margin-top: 40px;'><%- games[key].name %></h4>
 										<div style='text-align: center;'><% for (i in games[key].data.genres) { %>
@@ -92,7 +101,10 @@
 							if (games[key].patronOnly == true & patron) { %>
 							<li class="imgCont <%- games[key]._id %>" id="<%- games[key]._id %>" stat='add'>
 								<a href="javascript:;"onclick="javascript:modEntry(<%- "{'user':'" + user.id + "','id':'" + games[key]._id + "'}" %>)">
-		            	<div class="imgDescription imgDesNorm">
+									<div class="inverseImgDescription hidden">
+										<b><h1 align="center" style='margin-top: 40px;'>0</h1></b>
+									</div>
+									<div class="imgDescription imgDesNorm">
 										<h4 align="center" style='margin-top: 40px;'><%- games[key].name %></h4>
 										<div style='text-align: center;'><% for (i in games[key].data.genres) { %>
 											<% if (i != games[key].data.genres.length -1) { %>
@@ -125,6 +137,9 @@
 	        <% } else { %>
 						<li class="imgCont <%- games[key]._id %>" id="<%- games[key]._id %>" stat='add'>
 							<a href="javascript:;"onclick="javascript:modEntry(<%- "{'user':'" + user.id + "','id':'" + games[key]._id + "'}" %>)">
+								<div class="inverseImgDescription hidden">
+									<b><h1 align="center" style='margin-top: 40px;'>0</h1></b>
+								</div>
 								<div class="imgDescription imgDesNorm">
 									<h4 align="center" style='margin-top: 40px;'><%- games[key].name %></h4>
 									<div style='text-align: center;'><% for (i in games[key].data.genres) { %>
