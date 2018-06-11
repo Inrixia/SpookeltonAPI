@@ -1,7 +1,7 @@
 const Discord = require("discord.js");
 const Sarge = new Discord.Client();
 
-Sarge.login('***REMOVED***');
+Sarge.login('NDQxMDcyNzQ1NjI4MDQxMjI2.Dcq9SQ.dM3S_NI3khOmFhdhIp2AHhiWRY8');
 
 Sarge.on('ready', () => {
 	console.log(`Sarge Logged in as ${Sarge.user.tag}!`);

@@ -6,7 +6,7 @@ const fetch = require('node-fetch');
 const btoa = require('btoa');
 
 const CLIENT_ID = '387098195580289025';
-const CLIENT_SECRET = '***REMOVED***';
+const CLIENT_SECRET = '2di4O2F4KGY__Rap87DqiKLM4Q0Yahae';
 const redirect = encodeURIComponent('http://spookelton.net:25565/api/discord/callback');
 
 router.get('/login', (req, res) => {
