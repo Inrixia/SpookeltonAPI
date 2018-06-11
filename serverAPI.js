@@ -20,6 +20,8 @@ const Echo = new Discord.Client();
 
 var playerDict = {}
 var discordArray = []
+var incomingCommands = {}
+var pass = []
 
 //--- Begin Discord Functions
 // Echo ID: 412266457834192898
@@ -35,7 +37,7 @@ Echo.login('***REMOVED***');
 
 Echo.on('ready', () => {
 	console.log(`Echo Logged in as ${Echo.user.tag}!`);
-	Echo.guilds.get('155507830076604416').channels.get('412615383472930816').send('This is indeed running');
+	Echo.guilds.get('155507830076604416').channels.get('412615383472930816').send("Si:b:ler is gae. But I'm awake now...");
 	//Echo.guilds.get('155507830076604416').members.forEach(function(guildMember, guildMemberId) {
 	   //console.log(guildMember.user.username);
 		 //guildMember.setNickname(guildMember.user.username)
@@ -47,6 +49,34 @@ Echo.on('ready', () => {
 	//})
 	Echo.on('message', message => {
 		if (message.author.id != 412266457834192898) {
+			messageString = message+''
+			if (!incomingCommands[message.author.id]) {incomingCommands[message.author.id] = {status: false}}
+			if(incomingCommands[message.author.id].status == true) {
+				incomingCommands[message.author.id].status = false
+				if (messageString.toLowerCase() == 'yes') {
+					Echo.guilds.get('155507830076604416').channels.get(message.channel.id).send('Ok doing that now...');
+				} else {
+					Echo.guilds.get('155507830076604416').channels.get(message.channel.id).send('That sounds like a no...');
+				}
+			}
+			if(messageString.toLowerCase().slice(0, 4) == 'echo') {
+				incomingCommands[message.author.id].status = true
+				if(messageString.toLowerCase().indexOf('restart') > -1 & message.author.id == 155530711326130176) {
+					Echo.guilds.get('155507830076604416').channels.get(message.channel.id).send('Restarting API & DiscordBots...');
+					setTimeout(function(){
+						process.exit(1)
+					}, 250)
+				} else if(messageString.toLowerCase().indexOf('rollback') > -1) {
+					if(messageString.toLowerCase().indexOf('region') > -1) {
+						Echo.guilds.get('155507830076604416').channels.get(message.channel.id).send('You want me to rollback a region... Hmm Ill figure out how to do that soon.');
+					} else if(messageString.toLowerCase().indexOf('player') > -1) {
+						Echo.guilds.get('155507830076604416').channels.get(message.channel.id).send('You want me to rollback the playerdata for'+getPostCommand('player', messageString)+' from '+getPreCommand('hours', messageString)+' hours ago, on the server'+getPostCommand('server', messageString)+'?');
+					}
+				} else {
+					Echo.guilds.get('155507830076604416').channels.get(message.channel.id).send('Sorry I didnt understand that...');
+					incomingCommands[message.author.id].status = false
+				}
+			}
 			//message.member.setNickname('brian')
 			//Echo.on('message', message => {
 				//message.member.setNickname(message.member.username)
@@ -57,7 +87,6 @@ Echo.on('ready', () => {
 			//if (message.author.id == 208268769452097537) {
 			//	message.author.send(''+message);
 			//}&& message.author.id == 426011036844556289
-			messageString = message+''
 			if(messageString.indexOf('!spread') > -1 ) {
 				player = messageString.substring(5, messageString.indexOf('!spread')-6)
 				if(!playerDict[player]) {
@@ -77,6 +106,18 @@ Auth.on('ready', () => {
   	console.log(`Auth Logged in as ${Auth.user.tag}!`);
   	serv.upAllServData().then(updateServerMOTD)
 });
+
+function getPostCommand(preCommand, messageString) {
+	messageString = messageString+' xx'
+	pass[0] = messageString.slice(messageString.indexOf(preCommand))
+	pass[1] = pass[0].slice(pass[0].indexOf(' '))
+	return pass[1].slice(0, pass[1].slice(1).indexOf(' ')+1)
+}
+function getPreCommand(preCommand, messageString) {
+	pass[0] = messageString.slice(0, messageString.indexOf(preCommand))
+	pass[1] = pass[0].split('').reverse().join('').replace(' ', '')
+	return pass[2] = pass[1].slice(0, pass[1].indexOf(' ')).split('').reverse().join('')
+}
 
 function updateServerMOTD() {
 	db.get().collection('servers').find({}, {'dir': 1, 'properties.motd': 1}).forEach(function(server){
