@@ -6,7 +6,7 @@
     "start": "node www.js"
   },
   "dependencies": {
-    "adm-zip": "^0.4.7",
+    "adm-zip": "^0.4.11",
     "ajs": "^1.2.19",
     "assert": "^1.4.1",
     "async": "^2.6.0",
