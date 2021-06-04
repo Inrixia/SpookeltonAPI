@@ -25,7 +25,7 @@
     "mongo-escape": "^2.0.6",
     "mongo-json-escape": "0.0.1",
     "mongodb": "^2.2.34",
-    "morgan": "^1.9.0",
+    "morgan": "^1.9.1",
     "nbt": "^0.7.0",
     "nbt-js": "^0.1.0",
     "ncp": "^2.0.0",
