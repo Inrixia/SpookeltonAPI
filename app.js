@@ -29,7 +29,7 @@ passport.deserializeUser(function(user, done) {
 
 passport.use(new DiscordStrategy({
     clientID: '387098195580289025',
-    clientSecret: '***REMOVED***',
+    clientSecret: '2di4O2F4KGY__Rap87DqiKLM4Q0Yahae',
     callbackURL: 'http://spookelton.net:25565/callback',
     scope: scopes
 }, function(accessToken, refreshToken, profile, done) {
@@ -39,11 +39,11 @@ passport.use(new DiscordStrategy({
 }));
 
 app.use(session({
-  secret: '***REMOVED***',
+  secret: '!WantAN@ceBoxOfCook#es',
   saveUninitialized: false, // don't create session until something stored
   resave: false, //don't save session if unmodified
   store: new MongoStore({
-    url: 'mongodb://Administrator:***REMOVED***@localhost:27117/spookelton?authSource=admin',
+    url: 'mongodb://Administrator:Sp00key@localhost:27117/spookelton?authSource=admin',
     touchAfter: 24 * 3600 // time period in seconds [24 Hours]
   })
 }));

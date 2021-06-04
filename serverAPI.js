@@ -27,8 +27,8 @@ var pass = []
 // Echo ID: 412266457834192898
 // Auth ID: 387098195580289025
 
-Auth.login('***REMOVED***');
-Echo.login('***REMOVED***');
+Auth.login('Mzg3MDk4MTk1NTgwMjg5MDI1.DVcr2w.p4wSNkimNm9XOd5m9e4yFjj2BkQ');
+Echo.login('NDEyMjY2NDU3ODM0MTkyODk4.DWHwlw.znf4sQj1_7GI2xLuGABhR77ulak');
 
 //E2E.on('ready', () => {
 //	console.log(`E2E Logged in as ${E2E.user.tag}!`);

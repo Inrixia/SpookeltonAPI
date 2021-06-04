@@ -4,7 +4,7 @@ db = require('./db'),
 
 server = require('http').Server(app);
 
-db.connect('mongodb://Administrator:***REMOVED***@localhost:27117/spookelton?authSource=admin', function(err) {
+db.connect('mongodb://Administrator:Sp00key@localhost:27117/spookelton?authSource=admin', function(err) {
   if (err) {
     console.log('Unable to connect to Mongo.')
     process.exit(1)
