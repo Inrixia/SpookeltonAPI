@@ -21,7 +21,7 @@
     "full-icu": "^1.2.0",
     "glob": "^7.1.2",
     "http": "0.0.0",
-    "moment": "^2.20.1",
+    "moment": "^2.29.2",
     "mongo-escape": "^2.0.6",
     "mongo-json-escape": "0.0.1",
     "mongodb": "^2.2.34",
